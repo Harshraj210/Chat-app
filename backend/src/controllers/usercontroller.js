@@ -21,5 +21,20 @@ const registerUser = async (req, res) => {
     name,
     email,
     password: hashedPassword,
+   
   });
+  
 };
+
+const loginUser= async (req,res)=>{
+  const {email,password}=req.body
+  // finding the User
+  const user = await User.findOne({username}) 
+  if(!user){
+    return res.status(400).json({message:"USer not found, Try again!!"})
+  }
+  // validation of passwords
+  const validPassword = await bcrypt.compare(password,user.password)
+  if(!validPassword)
+    return res.staus(400).json({message:"Invalid Password, Try Again!!"})
+}
