@@ -3,38 +3,92 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import User from "../models/usermodel.js";
 
-// registering user
-const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "Fill all details" });
-  }
-  // user existence
-  const userexist = await User.findOne({ email });
-  if (userexist) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-  // hasing password
-  const hashedPassword = await bycrypt.hash(password, 10);
-  // new user to database
-  const newUser = await new User.create({
-    name,
-    email,
-    password: hashedPassword,
-   
+dotenv.config(); // load .env file
+
+// generating JWT token
+// id-->payload
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_KEY, {
+    expiresIn: "30d",
   });
-  
 };
 
-const loginUser= async (req,res)=>{
-  const {email,password}=req.body
-  // finding the User
-  const user = await User.findOne({username}) 
-  if(!user){
-    return res.status(400).json({message:"USer not found, Try again!!"})
+// register user
+const registerUser = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Fill all details" });
+    }
+
+    // check if user exists
+    const userexist = await User.findOne({ email });
+    if (userexist) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // create new user
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    return res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+      token: generateToken(newUser._id),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error registering user", error });
   }
-  // validation of passwords
-  const validPassword = await bcrypt.compare(password,user.password)
-  if(!validPassword)
-    return res.staus(400).json({message:"Invalid Password, Try Again!!"})
-}
+};
+
+// login user
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "User not found, Try again!!" });
+    }
+
+    // compare password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ message: "Invalid Password, Try Again!!" });
+    }
+
+    // success -> return user + token
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error logging in", error });
+  }
+};
+// updating Usewr profile
+const updateProfile = async (req, res) => {
+  const user = User.findById(req.user.id_);
+  if (user) {
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+  }
+};
+export default { registerUser, loginUser };
