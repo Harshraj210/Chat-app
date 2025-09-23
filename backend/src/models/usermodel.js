@@ -16,9 +16,11 @@ const userSchema = new mongoose.Schema({
     require: true,
   },
   
+},{
+  timestamps:true
 });
 
 // mongoose.model ->function that creates a model
-// User i name of collection (in MDB itt becomes users collection)
+// User  name of collection (in MDB it becomes users collection)
 const User = mongoose.model("User",userSchema)
 export default User
