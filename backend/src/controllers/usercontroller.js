@@ -83,12 +83,54 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: "Error logging in", error });
   }
 };
-// updating Usewr profile
-const updateProfile = async (req, res) => {
-  const user = User.findById(req.user.id_);
+
+const getUserProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
   if (user) {
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
+    res.status(200).json({
+      message: "Got you",
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+  } else {
+    res.status(404).json({ message: "User not found!!" });
   }
 };
-export default { registerUser, loginUser };
+
+// updating Usewr profile
+
+const updateProfile = async (req, res) => {
+  try {
+    const user = User.findById(req.user._id);
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.email = req.body.email || user.email;
+      // salt --> random string of characters added to your password before hashing
+      // Password: hello123
+
+      // Salt: A1B2C3
+
+      // Combined: hello123A1B2C3
+      if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(req.body.password, salt);
+      }
+      const updatedUser = await user.save();
+      res
+        .status(200)
+        .json({
+          message: "Profile Updated",
+          _id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          token: generateToken(updatedUser._id),
+        });
+    } else {
+      return res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error in updating User profile", error });
+  }
+};
+export default { registerUser, loginUser, updateProfile };
