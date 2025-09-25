@@ -133,4 +133,4 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Error in updating User profile", error });
   }
 };
-export default { registerUser, loginUser, updateProfile };
+export default { registerUser, loginUser, updateProfile , getUserProfile };
