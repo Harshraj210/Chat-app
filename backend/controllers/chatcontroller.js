@@ -23,6 +23,23 @@ const chatAccess = async (req, res) => {
     .populate("latestMessage");
   if (isChat.length > 0) {
     res.send(isChat[0]);
+  } else {
+    const chatdata = {
+      chatname: "sender",
+      isGroupChat: false,
+      users: [req.user._id, userId],
+    };
+  }
+  try {
+    const chatcreate = await Chat.create(chatdata);
+    // his line immediately finds the chat we just created
+    const fullchat = await Chat.findOne({ _id: createdChat._id }).populate(
+      "users",
+      "-password"
+    );
+    res.status(200).json(fullchat);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
