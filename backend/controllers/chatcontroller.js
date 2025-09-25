@@ -2,7 +2,7 @@ import Chat from "../models/chatmodel.js";
 import User from "../models/userModel.js";
 
 const chatAccess = async (req, res) => {
-  const { userId } = requestAnimationFrame.body;
+  const { userId } = req.body;
   if (!userId) {
     console.log("User Id not Found");
     return res.status(400);
@@ -39,7 +39,7 @@ const chatAccess = async (req, res) => {
     );
     res.status(200).json(fullchat);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: "message not found" });
   }
 };
 
