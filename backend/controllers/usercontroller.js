@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import User from "../models/usermodel.js";
+import User from "../models/userModel.js";
 
 dotenv.config(); // load .env file
 
@@ -48,6 +48,7 @@ const registerUser = async (req, res) => {
       token: generateToken(newUser._id),
     });
   } catch (error) {
+    console.error("REGISTRATION ERROR:", error);
     res.status(500).json({ message: "Error registering user", error });
   }
 };
@@ -117,15 +118,13 @@ const updateProfile = async (req, res) => {
         user.password = await bcrypt.hash(req.body.password, salt);
       }
       const updatedUser = await user.save();
-      res
-        .status(200)
-        .json({
-          message: "Profile Updated",
-          _id: updatedUser._id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          token: generateToken(updatedUser._id),
-        });
+      res.status(200).json({
+        message: "Profile Updated",
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        token: generateToken(updatedUser._id),
+      });
     } else {
       return res.status(404).json({ message: "User not found" });
     }
@@ -133,4 +132,4 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Error in updating User profile", error });
   }
 };
-export default { registerUser, loginUser, updateProfile , getUserProfile };
+export { registerUser, loginUser, updateProfile, getUserProfile };
