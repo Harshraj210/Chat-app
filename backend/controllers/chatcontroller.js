@@ -33,7 +33,7 @@ const chatAccess = async (req, res) => {
   try {
     const chatcreate = await Chat.create(chatdata);
     // his line immediately finds the chat we just created
-    const fullchat = await Chat.findOne({ _id: createdChat._id }).populate(
+    const fullchat = await Chat.findOne({ _id: chatcreate._id }).populate(
       "users",
       "-password"
     );
