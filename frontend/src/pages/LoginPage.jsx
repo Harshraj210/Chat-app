@@ -32,7 +32,7 @@ const LoginPage = () => {
       };
 
       const { data } = await axios.post(
-        "http://localhost:3000/api/users/login",
+        "/api/users/login",
         { email: loginEmail, password: loginPassword }
       );
 
@@ -62,8 +62,7 @@ const LoginPage = () => {
       };
 
       const { data } = await axios.post(
-    "http://localhost:3000/api/users/register", // <-- CORRECTED PORT
-    { name, email, password }
+    "/api/users/register", 
 );
 
       localStorage.setItem("userInfo", JSON.stringify(data));
