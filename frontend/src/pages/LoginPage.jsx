@@ -1,170 +1,111 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./LoginPage.css";
 
 const LoginPage = () => {
-  const [showLogin, setShowLogin] = useState(true); // State to toggle
+    // State to toggle between Login and Register views
+    const [isLoginView, setIsLoginView] = useState(true);
 
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+    // State for Login form inputs
+    const [loginEmail, setLoginEmail] = useState("");
+    const [loginPassword, setLoginPassword] = useState("");
 
-  useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-    if (userInfo) navigate("/chats");
-  }, [navigate]);
+    // State for Registration form inputs
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    
+    const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    if (!loginEmail || !loginPassword) {
-      console.error("Please fill all the fields for login");
-      return;
-    }
+    // Redirection if user is already logged in
+    // it runs after user logs in and directs it to chat page
+    useEffect(() => {
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        if (userInfo) {
+            navigate("/chats");
+        }
+    }, [navigate]);
 
-    try {
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-        },
-      };
+    // Handler for the Login form submission
+    const handleLogin = async (e) => {
+      // stops browser from refreshing the page
+        e.preventDefault();
+        try {
+            const { data } = await axios.post("/api/users/login",
+               { email: loginEmail, password: loginPassword });
+              //  saving user information in  LS
 
-      const { data } = await axios.post(
-        "/api/users/login",
-        { email: loginEmail, password: loginPassword }
-      );
+            localStorage.setItem("userInfo", JSON.stringify(data));
+            navigate("/chats");
+        } catch (error) {
+            console.error("Login Failed", error);
+            
+        }
+    };
 
-      localStorage.setItem("userInfo", JSON.stringify(data));
-      navigate("/chats");
-    } catch (error) {
-      if (error.response) {
-        console.error("Login Failed:", error.response.data.message);
-      } else {
-        // This handles network errors where the server couldn't be reached
-        console.error("An error occurred:", error.message);
-      }
-    }
-  };
+    // Handler for the registration form submission
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        try {
+            const { data } = await axios.post("/api/users/register", { name, email, password });
+            localStorage.setItem("userInfo", JSON.stringify(data));
+            navigate("/chats");
+        } catch (error) {
+            console.error("Registration Failed", error);
+            
+        }
+    };
 
-  const handleRegister = async () => {
-    if (!name || !email || !password) {
-      console.error("Please fill all the fields for registration");
-      return;
-    }
+    return (
+        <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
+            <div className="w-full max-w-md">
+                <div className="bg-gray-800 p-8 rounded-xl shadow-2xl">
+                    <h2 className="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
+                        {isLoginView ? 'LOGIN' : 'Create Account'}
+                    </h2>
+                    
+                    {isLoginView ? (
+                        // Login Form
+                        <form onSubmit={handleLogin}
+                         className="space-y-6">
+                            <input type="email"
+                             placeholder="Email" required 
+                             value={loginEmail} 
+                             onChange={(e) => setLoginEmail(e.target.value)} className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                            <input type="password" 
+                            placeholder="Password" required value={loginPassword} 
+                            onChange={(e) => setLoginPassword(e.target.value)} className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                            <button type="submit" className="w-full p-3 bg-blue-600 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors">Log In</button>
+                        </form>
+                    ) : (
+                        // Register Form
+                        <form onSubmit={handleRegister}
+                         className="space-y-6">
+                            <input type="text"
+                             placeholder="Name" 
+                             required value={name}
+                              onChange={(e) => setName(e.target.value)} 
+                              className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                            <input type="email" 
+                            placeholder="Email" required 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                            <input type="password" 
+                            placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                            <button type="submit" className="w-full p-3 bg-green-600 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors">Register</button>
+                        </form>
+                    )}
 
-    try {
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-        },
-      };
-
-      const { data } = await axios.post(
-    "/api/users/register", 
-);
-
-      localStorage.setItem("userInfo", JSON.stringify(data));
-      navigate("/chats");
-    } catch (error) {
-      if (error.response) {
-        console.error("Registration failed:", error.response.data.message);
-      } else {
-        // This handles network errors where the server couldn't be reached
-        console.error("An error occurred:", error.message);
-      }
-    }
-  };
-
-  return (
-    <div className="login-container">
-      <div className="form-box">
-        <div className="button-box">
-          <div id="btn" style={{ left: showLogin ? "0" : "110px" }}></div>
-          <button
-            type="button"
-            className="toggle-btn"
-            onClick={() => setShowLogin(true)}
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            className="toggle-btn"
-            onClick={() => setShowLogin(false)}
-          >
-            Register
-          </button>
+                    <p className="text-center text-gray-400 mt-6">
+                        {isLoginView ? "Don't have an account?" : "Already have an account?"}
+                        <button onClick={() => setIsLoginView(!isLoginView)} className="text-blue-400 hover:underline ml-2 font-semibold">
+                            {isLoginView ? 'Sign Up' : 'Log In'}
+                        </button>
+                    </p>
+                </div>
+            </div>
         </div>
-
-        {/* Login Form */}
-        <form
-          id="login"
-          className="input-group"
-          style={{ left: showLogin ? "50px" : "-400px" }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleLogin();
-          }}
-        >
-          <input
-            type="email"
-            className="input-field"
-            placeholder="Email"
-            required
-            onChange={(e) => setLoginEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            className="input-field"
-            placeholder="Password"
-            required
-            onChange={(e) => setLoginPassword(e.target.value)}
-          />
-          <button type="submit" className="submit-btn">
-            Log in
-          </button>
-        </form>
-
-        {/* Register Form */}
-        <form
-          id="register"
-          className="input-group"
-          style={{ left: showLogin ? "450px" : "50px" }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleRegister();
-          }}
-        >
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Name"
-            required
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="email"
-            className="input-field"
-            placeholder="Email"
-            required
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            className="input-field"
-            placeholder="Password"
-            required
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button type="submit" className="submit-btn">
-            Register
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default LoginPage;
