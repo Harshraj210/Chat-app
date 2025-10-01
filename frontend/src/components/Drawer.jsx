@@ -20,7 +20,7 @@ const Drawer = () => {
         <span>Search User</span>
       </button>
 
-      <h1 className='text-2xl font-bold'>Chat App</h1>
+      <h1 className='text-2xl font-bold'>WELCOME TO YOUR CHAT APP</h1>
 
       <div className='flex items-center space-x-4'>
         <div className='relative'>

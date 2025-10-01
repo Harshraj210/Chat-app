@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+// this file deals allt the logic logged in user who,which chat is selected,chat list
 
 // import { useNavigate } from "react-router-dom"; 
 

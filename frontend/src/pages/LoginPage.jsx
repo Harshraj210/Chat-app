@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useChatState } from "../context/ChatProvider";
 
 const LoginPage = () => {
     // State to toggle between Login and Register views
@@ -16,6 +17,7 @@ const LoginPage = () => {
     const [password, setPassword] = useState("");
     
     const navigate = useNavigate();
+    const { setUser } = useChatState();
 
     // Redirection if user is already logged in
     // it runs after user logs in and directs it to chat page
@@ -36,6 +38,7 @@ const LoginPage = () => {
               //  saving user information in  LS
 
             localStorage.setItem("userInfo", JSON.stringify(data));
+            setUser(data);
             navigate("/chats");
         } catch (error) {
             console.error("Login Failed", error);
@@ -49,6 +52,7 @@ const LoginPage = () => {
         try {
             const { data } = await axios.post("/api/users/register", { name, email, password });
             localStorage.setItem("userInfo", JSON.stringify(data));
+            setUser(data);
             navigate("/chats");
         } catch (error) {
             console.error("Registration Failed", error);
