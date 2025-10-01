@@ -1,60 +1,47 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useChatState } from "../context/ChatProvider.jsx";
+import Drawer from "../components/Drawer.jsx";
+import MyChats from "../components/MyChats.jsx";
+import ChatBox from "../components/ChatBox.jsx";
 
 const ChatPage = () => {
-    const [chats, setChats] = useState([]);
-    const navigate = useNavigate();
+  const { user } = useChatState();
+  const navigate = useNavigate();
 
-    // This function will fetch the chats from the backend
-    const fetchChats = async () => {
-        try {
-            const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-            
-            // This config object includes the auth token in the header
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${userInfo.token}`,
-                },
-            };
+  // This guard protects the page from non-logged-in users.
+  useEffect(() => {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    if (!userInfo) {
+      navigate("/");
+    }
+  }, [navigate]);
 
-            // Make the API call
-            const { data } = await axios.get("http://localhost:5000/api/chat", config);
-            setChats(data);
-        } catch (error) {
-            console.error("Failed to load the chats", error);
-        }
-    };
-
-    // useEffect to run fetchChats when the component loads
-    useEffect(() => {
-        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        if (!userInfo) {
-            navigate("/");
-            return; // Stop execution if not logged in
-        }
-        
-        fetchChats();
-    }, [navigate]);
-
-    const logoutHandler = () => {
-        localStorage.removeItem("userInfo");
-        navigate("/");
-    };
-
+  
+  // If the user state hasn't been loaded  yet,
+  // display a loading message and stop rendering.
+  if (!user) {
     return (
-        <div>
-            <h1>Welcome to the Chat Page!</h1>
-            <h1>Work in Progress.....</h1>
-            <div>
-                <h2>My Chats</h2>
-                {/* We will map over the 'chats' state here later to display them */}
-                {chats.map(chat => (
-                    <div key={chat._id}>{chat.chatName}</div>
-                ))}
-            </div>
-            <button onClick={logoutHandler}>Logout</button>
-        </div>
+      <div className="w-full h-screen bg-gray-900 flex justify-center items-center text-white text-2xl">
+        Loading...
+      </div>
     );
+  }
+
+  // This part will only run AFTER the 'user' object is confirmed to exist.
+  return (
+    <div className="w-full h-screen bg-gray-900 text-white">
+      <Drawer />
+      <div className="flex justify-between w-full h-[91.5vh] p-3 space-x-3">
+        <div className="w-1/3">
+          <MyChats />
+        </div>
+        <div className="w-2/3">
+          <ChatBox />
+        </div>
+      </div>
+    </div>
+  );
 };
+
 export default ChatPage;
