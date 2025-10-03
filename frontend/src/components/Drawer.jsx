@@ -4,6 +4,8 @@ import { useChatState } from "../context/ChatProvider";
 import axios from "axios";
 
 const Drawer = () => {
+  // the profile menu is open or closed
+   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   // for storing search results from backend
   const [searchResult, setSearchResult] = useState([]);
@@ -13,7 +15,7 @@ const Drawer = () => {
   const navigate = useNavigate();
   // for search logic
 
-  const handleSearch = async (req, res) => {
+  const handleSearch = async () => {
     if (!search) {
       console.log("Please enter something to search!!");
       return;
@@ -23,11 +25,16 @@ const Drawer = () => {
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`,
+          // These headers force a fresh fetch every time
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       };
       const { data } = await axios.get(`/api/users?search=${search}`, config);
       // we get the data now we will close the loDING
       setLoading(false);
+      setSearchResult(data);
     } catch (error) {
       setLoading(false);
       console.error("Failed to load search results", error);
