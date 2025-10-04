@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useChatState } from "../context/ChatProvider";
+import UpdateGroupChatModal from "../components/UpdateGroupChatModal";
+import GroupChatModal from "./GroupChatModal";
 // this component is for de=iplaying the recent chats
 
 const MyChats = () => {
   // Get global state and setters from the ChatProvider
   const { user, setSelectedChat, selectedChat, chats, setChats } =
     useChatState();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [fetchAgain, setFetchAgain] = useState(false)
 
   const fetchChats = async () => {
     // We can't fetch chats if the user isn't logged in
@@ -29,25 +33,31 @@ const MyChats = () => {
   // This useEffect runs once when the component loads to fetch the chats
   useEffect(() => {
     fetchChats();
-  }, [user]);
+    // This tells React to re-run this effect (and re-fetch chats) whenever fetchAgain changes.
+  }, [user, fetchAgain]);
   // Helper function to get the name of the other user in a one-on-one chat
   const getSender = (loggedUser, users) => {
     // safety checks for loggedUser and users
-      if (!loggedUser || !users || users.length < 2) {
-        return "Unknown User";
+    if (!loggedUser || !users || users.length < 2) {
+      return "Unknown User";
     }
     // id of 1st person is same as logged in user then return second person name or
     // return users[0] --> first person name
-    return users[0]?._id === loggedUser.user._id ? users[1].name : users[0].name;
+    return users[0]?._id === loggedUser.user._id
+      ? users[1].name
+      : users[0].name;
   };
 
   return (
-    // Main container for the MyChats component
+    <>
+    
     <div className="flex flex-col items-center p-3 bg-gray-800 w-full h-full rounded-lg">
       {/* Header section with title and "New Group Chat" button */}
       <div className="pb-3 px-3 text-2xl font-bold w-full flex justify-between items-center">
         My Chats
-        <button className="flex items-center space-x-1 bg-gray-700 hover:bg-gray-600 p-2 rounded-lg text-base font-medium">
+        <button
+         onClick={() => setIsModalOpen(true)}
+         className="flex items-center space-x-1 bg-gray-700 hover:bg-gray-600 p-2 rounded-lg text-base font-medium">
           <span>New Group Chat</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -104,6 +114,12 @@ const MyChats = () => {
         )}
       </div>
     </div>
+      <GroupChatModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        />
+      </>
+    
   );
 };
 

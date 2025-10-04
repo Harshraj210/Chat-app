@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChatState } from "../context/ChatProvider.jsx";
 import Drawer from "../components/Drawer.jsx";
@@ -8,6 +8,7 @@ import ChatBox from "../components/ChatBox.jsx";
 const ChatPage = () => {
   const { user } = useChatState();
   const navigate = useNavigate();
+  const [fetchAgain, setFetchAgain] =  useState(false)
 
   // This guard protects the page from non-logged-in users.
   useEffect(() => {
@@ -20,7 +21,7 @@ const ChatPage = () => {
   
   // If the user state hasn't been loaded  yet,
   // display a loading message and stop rendering.
-  if (!user) {
+ if (!user) {
     return (
       <div className="w-full h-screen bg-gray-900 flex justify-center items-center text-white text-2xl">
         Loading...
