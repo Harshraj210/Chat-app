@@ -1,24 +1,30 @@
 import mongoose from "mongoose";
-const chatSchema = new mongoose.Schema({
-  chatname:{
-    type:String,
 
-  },
-  // lists everyone in chat
-  users:[{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"User"
-  }],
-  latestmessage:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"Message"
-  },
-  groupAdmin:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"User "
-  }
-},{
-  timestamps:true
-})
-const Chat = mongoose.model("Chat",chatSchema)
-export default Chat
+const chatSchema = new mongoose.Schema(
+    {
+        chatName: { 
+            type: String, 
+            trim: true 
+        },
+        isGroupChat: { 
+            type: Boolean, 
+            default: false 
+        },
+        users: [{ 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: "User" 
+        }],
+        latestMessage: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Message", // This line tells Mongoose to link to the 'Message' model
+        },
+        groupAdmin: { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: "User" 
+        },
+    },
+    { timestamps: true }
+);
+
+const Chat = mongoose.model("Chat", chatSchema);
+export default Chat;

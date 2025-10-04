@@ -112,7 +112,7 @@ const updateProfile = async (req, res) => {
 
       // Salt: A1B2C3
 
-      // Combined: hello123A1B2C3
+      // Combined: hello123A1B2C3`
       if (req.body.password) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(req.body.password, salt);
@@ -132,4 +132,26 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Error in updating User profile", error });
   }
 };
-export { registerUser, loginUser, updateProfile, getUserProfile };
+const allUsers = async (req, res) => {
+  const query = req.query.search
+    ? {
+        // use MONGODB TO SEARCH EITHER NAME OR EMAIL
+        $or: [
+          {
+            name: { $regex: req.query.search, $options: "i" },
+          },
+          {
+            email: { $regex: req.query.search, $options: "i" },
+          },
+        ],
+      }
+    : // If no search query, return all users
+      {};
+  // finding user with matchinng keywwords except logged in user
+  // not equal -->ne
+  // where --> automatic filter hides looged in user id
+  const users = await User.find(query).where("_id").ne(req.user._id);
+  res.send(users);
+};
+
+export { registerUser, loginUser, updateProfile, getUserProfile, allUsers };

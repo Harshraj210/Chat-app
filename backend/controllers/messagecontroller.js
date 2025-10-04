@@ -13,36 +13,46 @@ const allMessages = async(req,res)=>{
     res.status(400).json({ message: error.message });
   }
 }
-const sendMessage = async (req,res)=>{
-  const {chatId,content}= req.body
-  if(!chatId || !content){
-    console.log("Invalid Message Passed")
-    return res.sendStatus(400)
-  }
-  // creating message object
+const sendMessage = async (req, res) => {
+  const { content, chatId } = req.body;
 
-  const newMessage={
-    sender:req.user._id,
-    content:content,
-    chat:chatId
+  if (!content || !chatId) {
+    console.log("Invalid data passed into request");
+    return res.sendStatus(400);
   }
+
+  const newMessage = {
+    sender: req.user._id,
+    content: content,
+    chat: chatId,
+  };
+
   try {
-    // saving new message to message collection 
-    let message  = await Message.create(newMessage)
-    // dispalying whose message it is 
-    message = await message.populate("sender","name")
-    message = await message.populate("chat")
-    message = await message.populate(message,{
-      // path tells mongoose to goto chat field and fect users 
-      path:"chat.users",
-      select:"name email"
-    })
-    // updating the latest message 
-    await Chat.findByIdAndUpdate(req.body.chatId,{latestmessage:message})
-    res.json(message)
+    //  Create the message
+    let message = await Message.create(newMessage);
 
+    //  Fetch the newly created message to populate it correctly
+    message = await Message.findById(message._id)
+      .populate("sender", "name") // Populate sender's name
+      .populate("chat");          // Populate the chat details
+
+    //  Further populate the users within the chat object
+    message = await User.populate(message, {
+      path: "chat.users",
+      select: "name email",
+    });
+
+    // 4. Update the chat's 'latestMessage' field
+    await Chat.findByIdAndUpdate(req.body.chatId, {
+      latestMessage: message, // Ensure this matches your schema (camelCase)
+    });
+
+    //  Send the complete message back
+    res.json(message);
   } catch (error) {
-    res.status(400).json({ message: error.message })
+    // This will log the specific database error to your backend terminal
+    console.error("ERROR SENDING MESSAGE:", error); 
+    res.status(400).json({ message: "Failed to send message", details: error.message });
   }
-}
+};
 export {allMessages, sendMessage}
