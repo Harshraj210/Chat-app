@@ -32,9 +32,13 @@ const MyChats = () => {
   }, [user]);
   // Helper function to get the name of the other user in a one-on-one chat
   const getSender = (loggedUser, users) => {
+    // safety checks for loggedUser and users
+      if (!loggedUser || !users || users.length < 2) {
+        return "Unknown User";
+    }
     // id of 1st person is same as logged in user then return second person name or
     // return users[0] --> first person name
-    return users[0]?._id === loggedUser?._id ? users[1].name : users[0].name;
+    return users[0]?._id === loggedUser.user._id ? users[1].name : users[0].name;
   };
 
   return (

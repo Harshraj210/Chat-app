@@ -57,7 +57,8 @@ const ChatBox = () => {
     if (!socket) return;
     // If the message is not for the currently open chat
     const messageListener = (newMessageReceived) => {
-      if (!selectedChat || selectedChat._id !== newMessageReceived._id) {
+      console.log("Frontend 'message received' event from server with:", newMessageReceived);
+      if (!selectedChat || selectedChat._id !== newMessageReceived.chat._id) {
         // do nothing
       } else {
         // If it's for the current chat, add it to the messages list
@@ -102,6 +103,8 @@ const sendMessage = async (event) => {
         },
         config
       );
+      console.log("Frontend emitting 'new message' event with:", data);
+       socket.emit("new message", data);
 
       // Update the UI instantly with the new message from the server
       setMessages([...messages, data]);
