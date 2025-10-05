@@ -99,6 +99,7 @@ const createGroupChat = async (req, res) => {
   users.push(req.user);
 
   try {
+    // Creating the Chat
     const groupChat = await Chat.create({
       chatName: req.body.name,
       users: users,
