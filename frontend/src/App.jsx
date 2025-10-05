@@ -3,6 +3,8 @@ import { Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import "./App.css";
+import { Toaster } from "react-hot-toast";
+
 
 function App() {
   return (
@@ -14,8 +16,11 @@ function App() {
         {/* When the user navigates to "/chats", show the ChatPage */}
         <Route path="/chats" element={<ChatPage />} />
       </Routes>
+      <Toaster position="top-right" reverseOrder={false} />
     </div>
+    
   );
+
 }
 
 export default App;
