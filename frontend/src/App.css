@@ -117,3 +117,10 @@ button:hover {
   border-radius: 30px;
   margin-top: 20px;
 }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  @apply bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] text-white;
+}

@@ -6,11 +6,10 @@ import MyChats from "../components/MyChats.jsx";
 import ChatBox from "../components/ChatBox.jsx";
 
 const ChatPage = () => {
-  const { user } = useChatState();
+  const { user, selectedChat } = useChatState();
   const navigate = useNavigate();
-  const [fetchAgain, setFetchAgain] =  useState(false)
+  const [fetchAgain, setFetchAgain] = useState(false);
 
-  // This guard protects the page from non-logged-in users.
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     if (!userInfo) {
@@ -18,10 +17,7 @@ const ChatPage = () => {
     }
   }, [navigate]);
 
-  
-  // If the user state hasn't been loaded  yet,
-  // display a loading message and stop rendering.
- if (!user) {
+  if (!user) {
     return (
       <div className="w-full h-screen bg-gray-900 flex justify-center items-center text-white text-2xl">
         Loading...
@@ -29,16 +25,26 @@ const ChatPage = () => {
     );
   }
 
-  // This part will only run AFTER the 'user' object is confirmed to exist.
   return (
-    <div className="w-full h-screen bg-gray-900 text-white">
+    <div className="w-full h-screen bg-gray-900 text-white flex flex-col">
       <Drawer />
-      <div className="flex justify-between w-full h-[91.5vh] p-3 space-x-3">
-        <div className="w-1/3">
-          <MyChats />
+      <div className="flex flex-1 justify-between w-full p-2 md:p-3 md:space-x-3 overflow-hidden">
+        {/*  MyChats Section */}
+        <div
+          className={`${
+            selectedChat ? "hidden md:flex" : "flex"
+          } w-full md:w-1/3 transition-all duration-300`}
+        >
+          <MyChats fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
         </div>
-        <div className="w-2/3">
-          <ChatBox />
+
+        {/*  ChatBox Section */}
+        <div
+          className={`${
+            selectedChat ? "flex" : "hidden md:flex"
+          } w-full md:w-2/3 transition-all duration-300`}
+        >
+          <ChatBox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
         </div>
       </div>
     </div>

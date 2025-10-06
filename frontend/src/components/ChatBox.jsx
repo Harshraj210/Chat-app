@@ -3,41 +3,32 @@ import axios from "axios";
 import { useChatState } from "../context/ChatProvider";
 import Picker from "emoji-picker-react";
 import io from "socket.io-client";
-// URL of your backend server where the socket is running
-const ENDPOINT = "http://localhost:3000";
 
+const ENDPOINT = "http://localhost:3000";
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
-  // controlled input text the user is typing
   const [newMessage, setNewMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
   const [socket, setSocket] = useState(null);
-  const { user, selectedChat } = useChatState();
   const [showPicker, setShowPicker] = useState(false);
+  const { user, selectedChat, setSelectedChat } = useChatState();
 
   useEffect(() => {
     if (!user) return;
-    // establishing connection to backend server
     const newSocket = io(ENDPOINT);
     setSocket(newSocket);
     newSocket.emit("setup", user);
     newSocket.on("connected", () => console.log("Socket.IO Connected!"));
-    // when logout is done this comp. unloads
     return () => newSocket.disconnect();
   }, [user]);
 
   const fetchMessages = async () => {
     if (!selectedChat || !user) return;
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.get(
-        `/api/message/${selectedChat._id}`,
-        config
-      );
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const { data } = await axios.get(`/api/message/${selectedChat._id}`, config);
       setMessages(data);
     } catch (error) {
       console.error("Error fetching messages", error);
@@ -46,133 +37,121 @@ const ChatBox = () => {
 
   useEffect(() => {
     fetchMessages();
-    //  when the user selects a chat they join the chat with the chat ID
     if (socket && selectedChat) {
       socket.emit("join chat", selectedChat._id);
     }
   }, [selectedChat, socket]);
 
-  // This useEffect is dedicated to listening for incoming messages.....
   useEffect(() => {
     if (!socket) return;
-    // If the message is not for the currently open chat
+
+    socket.on("typing", (typingUser) => {
+      setTypingUsers((prev) => (!prev.includes(typingUser.name) ? [...prev, typingUser.name] : prev));
+    });
+    socket.on("stop typing", (typingUser) => {
+      setTypingUsers((prev) => prev.filter((u) => u !== typingUser.name));
+    });
+
     const messageListener = (newMessageReceived) => {
-      console.log("Frontend 'message received' event from server with:", newMessageReceived);
-      if (!selectedChat || selectedChat._id !== newMessageReceived.chat._id) {
-        // do nothing
-      } else {
-        // If it's for the current chat, add it to the messages list
-        setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
-      }
+      if (!selectedChat || selectedChat._id !== newMessageReceived.chat._id) return;
+      setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
     };
-    // Set up the listener for the "message recieved" event from the server
+
     socket.on("message received", messageListener);
+
     return () => {
       socket.off("message received", messageListener);
+      socket.off("typing");
+      socket.off("stop typing");
     };
   }, [selectedChat, messages, socket]);
 
-  // This function now handles the form submission
-  // Replace the existing sendMessage function in your ChatBox.jsx
+  const sendMessage = async (event) => {
+    event.preventDefault();
+    if (selectedChat && newMessage.trim()) {
+      try {
+        const config = { headers: { "Content-type": "application/json", Authorization: `Bearer ${user.token}` } };
+        const messageToSend = newMessage;
+        setNewMessage("");
 
-const sendMessage = async (event) => {
-  event.preventDefault(); // Stop the page from reloading
-
-  //  Only run if a chat is selected and there's a message
-  if (selectedChat && newMessage.trim()) {
-    try {
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-
-      // Store the message content in a temporary variable
-      const messageToSend = newMessage;
-      
-      // Clear the input field immediately
-      setNewMessage("");
-      console.log("Data being sent to backend:", { content: messageToSend, chatId: selectedChat._id });
-
-      const { data } = await axios.post(
-        "/api/message",
-        {
-          content: messageToSend, // Use the temporary variable
-          chatId: selectedChat._id, // Ensure we're sending the ID
-        },
-        config
-      );
-      console.log("Frontend emitting 'new message' event with:", data);
-       socket.emit("new message", data);
-
-      // Update the UI instantly with the new message from the server
-      setMessages([...messages, data]);
-    } catch (error) {
-      console.error("Error sending message", error);
+        const { data } = await axios.post("/api/message", { content: messageToSend, chatId: selectedChat._id }, config);
+        socket.emit("new message", data);
+        setMessages([...messages, data]);
+      } catch (error) {
+        console.error("Error sending message", error);
+      }
     }
-  }
-};
-  // show other person's name in 1to1 chat
+  };
+
   const getSender = (loggedUser, users) => {
     if (!loggedUser || !users) return "Unknown";
-    return users[0]?._id === loggedUser.user._id
-      ? users[1].name
-      : users[0].name;
+    return users[0]?._id === loggedUser.user._id ? users[1].name : users[0].name;
   };
-  // handler when emoji is clicked
+
   const onEmojiClick = (emojiObject) => {
     setNewMessage((prevInput) => prevInput + emojiObject.emoji);
-    // close picker after selecting the emoji
     setShowPicker(false);
   };
-  // helper function to get timestamp
+
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const handleTyping = () => {
+    setIsTyping(true);
+    socket?.emit("typing", { chatId: selectedChat._id, name: user.user.name });
+
+    clearTimeout(window.typingTimeout);
+    window.typingTimeout = setTimeout(() => {
+      setIsTyping(false);
+      socket?.emit("stop typing", { chatId: selectedChat._id, name: user.user.name });
+    }, 1000);
   };
 
   return (
     <div
-      className={`flex flex-col w-full h-full p-3 rounded-lg ${
-        selectedChat ? "bg-gray-800" : "bg-gray-800 items-center justify-center"
+      className={`flex flex-col w-full h-full rounded-2xl transition-all duration-300 overflow-hidden ${
+        selectedChat ? "bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]" : "bg-gray-800 items-center justify-center"
       }`}
     >
       {selectedChat ? (
         <>
-          <div className="text-xl font-bold p-2 border-b-2 border-gray-700 w-full text-center">
-            {!selectedChat.isGroupChat
-              ? getSender(user, selectedChat.users)
-              : selectedChat.chatName.toUpperCase()}
+          {/* Header */}
+          <div className="flex items-center justify-between text-xl sm:text-2xl font-semibold p-3 border-b border-white/10 backdrop-blur-md bg-white/5">
+            <button
+              className="sm:hidden p-2 text-gray-400 hover:text-white transition-colors"
+              onClick={() => setSelectedChat(null)}
+            >
+              ←
+            </button>
+            <span className="flex-1 text-center sm:text-left text-teal-400 tracking-wide">
+              {!selectedChat.isGroupChat
+                ? getSender(user, selectedChat.users)
+                : selectedChat.chatName.toUpperCase()}
+            </span>
           </div>
-          <div className="flex-grow flex flex-col-reverse bg-gray-700 rounded-lg my-2 p-3 overflow-y-auto">
+
+          {/* Messages container */}
+          <div className="flex-grow flex flex-col-reverse bg-black/20 rounded-lg m-3 p-3 overflow-y-auto shadow-inner scrollbar-thin scrollbar-thumb-teal-500/40">
             <div className="flex flex-col space-y-3">
               {messages.map((m) => (
                 <div
                   key={m._id}
                   className={`flex items-end space-x-2 ${
-                    m.sender?._id === user.user._id
-                      ? "justify-end"
-                      : "justify-start"
+                    m.sender?._id === user.user._id ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {/* Message Bubble */}
                   <div
-                    className={`px-3 py-2 rounded-2xl max-w-xs lg:max-w-md break-words ${
+                    className={`px-4 py-2 rounded-2xl max-w-xs sm:max-w-md break-words shadow-md transition-transform ${
                       m.sender?._id === user.user._id
-                        ? "bg-blue-600 rounded-br-none"
-                        : "bg-gray-600 rounded-bl-none"
+                        ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-br-none"
+                        : "bg-gray-700/70 text-gray-100 rounded-bl-none"
                     }`}
                   >
                     <p>{m.content}</p>
-                    {/* 5. Display the formatted timestamp inside the bubble */}
                     <p
                       className={`text-xs mt-1 ${
-                        m.sender._id === user.user._id
-                          ? "text-blue-200"
-                          : "text-gray-400"
+                        m.sender._id === user.user._id ? "text-blue-200" : "text-gray-400"
                       } text-right`}
                     >
                       {formatTimestamp(m.createdAt)}
@@ -180,20 +159,26 @@ const sendMessage = async (event) => {
                   </div>
                 </div>
               ))}
+
+              {/* Typing indicator */}
+              {typingUsers.length > 0 && selectedChat?.isGroupChat && (
+                <div className="text-teal-300 text-sm italic animate-pulse">
+                  {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing...
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Message Input Form */}
+          {/* Message input */}
           <form
             onSubmit={sendMessage}
-            className="p-2 border-t-2 border-gray-700 flex items-center space-x-2 relative"
+            className="p-3 border-t border-white/10 bg-white/5 flex items-center space-x-3"
           >
-            {/* 6. Emoji Picker Button */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowPicker((val) => !val)}
-                className="p-2 text-gray-400 hover:text-white"
+                className="p-2 text-gray-300 hover:text-teal-400 transition-all"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -210,9 +195,8 @@ const sendMessage = async (event) => {
                   />
                 </svg>
               </button>
-              {/* 7. Conditionally render the Emoji Picker */}
               {showPicker && (
-                <div className="absolute bottom-14 left-0">
+                <div className="absolute bottom-14 left-0 z-50">
                   <Picker onEmojiClick={onEmojiClick} theme="dark" />
                 </div>
               )}
@@ -220,18 +204,22 @@ const sendMessage = async (event) => {
 
             <input
               type="text"
-              placeholder="Enter a message.."
+              placeholder="Type a message..."
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="w-full p-2 bg-gray-600 rounded-lg focus:outline-none"
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTyping();
+              }}
+              className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
+
             <button
               type="submit"
-              className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              className="p-2 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl hover:scale-105 transition-transform shadow-md"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 transform rotate-90"
+                className="h-6 w-6 text-white transform rotate-90"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -241,8 +229,9 @@ const sendMessage = async (event) => {
           </form>
         </>
       ) : (
-        <div className="text-center text-gray-400">
-          <h3 className="text-2xl">Select a user to start chatting</h3>
+        <div className="text-center text-gray-400 p-8">
+          <h3 className="text-2xl font-medium text-teal-400 mb-2">Select a user to start chatting 💬</h3>
+          <p className="text-gray-500">Your conversations will appear here.</p>
         </div>
       )}
     </div>
