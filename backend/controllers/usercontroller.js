@@ -86,72 +86,99 @@ const loginUser = async (req, res) => {
 };
 
 const getUserProfile = async (req, res) => {
-  const user = await User.findById(req.user._id);
-  if (user) {
-    res.status(200).json({
-      message: "Got you",
-      id: user._id,
-      name: user.name,
-      email: user.email,
-    });
-  } else {
-    res.status(404).json({ message: "User not found!!" });
+  try {
+    // req.user is populated by the 'protect' middleware
+    const user = await User.findById(req.user._id).select("-password");
+
+    if (user) {
+      res.status(200).json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user profile", error });
   }
 };
 
+
 // updating Usewr profile
 
-const updateProfile = async (req, res) => {
+const updateUserProfile = async (req, res) => {
   try {
-    const user = User.findById(req.user._id);
-    if (user) {
-      user.name = req.body.name || user.name;
-      user.email = req.body.email || user.email;
-      // salt --> random string of characters added to your password before hashing
-      // Password: hello123
+    const { name, bio } = req.body;
 
-      // Salt: A1B2C3
+    // Find the user by their ID (from the JWT token) and update them
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id, // The user's ID is attached by the 'protect' middleware
+      { name, bio },
+      { new: true } // This option returns the updated document
+    ).select("-password"); // Exclude the password from the returned object
 
-      // Combined: hello123A1B2C3`
-      if (req.body.password) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(req.body.password, salt);
-      }
-      const updatedUser = await user.save();
-      res.status(200).json({
-        message: "Profile Updated",
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        token: generateToken(updatedUser._id),
-      });
-    } else {
+    if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
+    
+    // Send back the updated user info and a new token
+    res.status(200).json({
+        message: "Profile updated successfully",
+        user: {
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            pic: updatedUser.pic,
+            bio: updatedUser.bio
+        },
+        token: generateToken(updatedUser._id),
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Error in updating User profile", error });
+    res.status(500).json({ message: "Error updating profile", error });
   }
+};
+// NEW FUNCTION TO UPDATE ONLY THE PROFILE PICTURE
+const updateProfilePic = async (req, res) => {
+    try {
+        const { pic } = req.body; // The new pic URL from Cloudinary
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            { pic: pic },
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "Profile picture updated successfully",
+            user: {
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                pic: updatedUser.pic,
+                bio: updatedUser.bio
+            },
+            token: generateToken(updatedUser._id),
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Error updating profile picture", error });
+    }
 };
 const allUsers = async (req, res) => {
   const query = req.query.search
     ? {
-        // use MONGODB TO SEARCH EITHER NAME OR EMAIL
         $or: [
-          {
-            name: { $regex: req.query.search, $options: "i" },
-          },
-          {
-            email: { $regex: req.query.search, $options: "i" },
-          },
+          { name: { $regex: req.query.search, $options: "i" } },
+          { email: { $regex: req.query.search, $options: "i" } },
         ],
       }
-    : // If no search query, return all users
-      {};
-  // finding user with matchinng keywwords except logged in user
-  // not equal -->ne
-  // where --> automatic filter hides looged in user id
-  const users = await User.find(query).where("_id").ne(req.user._id);
+    : {};
+  
+  // Find all users matching the query, but exclude the current user
+  const users = await User.find(query).find({ _id: { $ne: req.user._id } });
   res.send(users);
 };
 
-export { registerUser, loginUser, updateProfile, getUserProfile, allUsers };
+export { registerUser, loginUser, allUsers, updateUserProfile, updateProfilePic,getUserProfile };
