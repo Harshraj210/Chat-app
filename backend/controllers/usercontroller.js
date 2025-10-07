@@ -103,69 +103,69 @@ const getUserProfile = async (req, res) => {
 
 // updating Usewr profile
 
-const updateUserProfile = async (req, res) => {
-  try {
-    const { name, bio } = req.body;
+// const updateUserProfile = async (req, res) => {
+//   try {
+//     const { name, bio } = req.body;
 
-    // Find the user by their ID (from the JWT token) and update them
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id, // The user's ID is attached by the 'protect' middleware
-      { name, bio },
-      { new: true } // This option returns the updated document
-    ).select("-password"); // Exclude the password from the returned object
+//     // Find the user by their ID (from the JWT token) and update them
+//     const updatedUser = await User.findByIdAndUpdate(
+//       req.user._id, // The user's ID is attached by the 'protect' middleware
+//       { name, bio },
+//       { new: true } // This option returns the updated document
+//     ).select("-password"); // Exclude the password from the returned object
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
+//     if (!updatedUser) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
     
-    // Send back the updated user info and a new token
-    res.status(200).json({
-        message: "Profile updated successfully",
-        user: {
-            _id: updatedUser._id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            pic: updatedUser.pic,
-            bio: updatedUser.bio
-        },
-        token: generateToken(updatedUser._id),
-    });
+//     // Send back the updated user info and a new token
+//     res.status(200).json({
+//         message: "Profile updated successfully",
+//         user: {
+//             _id: updatedUser._id,
+//             name: updatedUser.name,
+//             email: updatedUser.email,
+//             pic: updatedUser.pic,
+//             bio: updatedUser.bio
+//         },
+//         token: generateToken(updatedUser._id),
+//     });
 
-  } catch (error) {
-    res.status(500).json({ message: "Error updating profile", error });
-  }
-};
-// NEW FUNCTION TO UPDATE ONLY THE PROFILE PICTURE
-const updateProfilePic = async (req, res) => {
-    try {
-        const { pic } = req.body; // The new pic URL from Cloudinary
+//   } catch (error) {
+//     res.status(500).json({ message: "Error updating profile", error });
+//   }
+// };
+// // NEW FUNCTION TO UPDATE ONLY THE PROFILE PICTURE
+// const updateProfilePic = async (req, res) => {
+//     try {
+//         const { pic } = req.body; // The new pic URL from Cloudinary
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user._id,
-            { pic: pic },
-            { new: true }
-        ).select("-password");
+//         const updatedUser = await User.findByIdAndUpdate(
+//             req.user._id,
+//             { pic: pic },
+//             { new: true }
+//         ).select("-password");
 
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
+//         if (!updatedUser) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
 
-        res.status(200).json({
-            message: "Profile picture updated successfully",
-            user: {
-                _id: updatedUser._id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                pic: updatedUser.pic,
-                bio: updatedUser.bio
-            },
-            token: generateToken(updatedUser._id),
-        });
+//         res.status(200).json({
+//             message: "Profile picture updated successfully",
+//             user: {
+//                 _id: updatedUser._id,
+//                 name: updatedUser.name,
+//                 email: updatedUser.email,
+//                 pic: updatedUser.pic,
+//                 bio: updatedUser.bio
+//             },
+//             token: generateToken(updatedUser._id),
+//         });
 
-    } catch (error) {
-        res.status(500).json({ message: "Error updating profile picture", error });
-    }
-};
+//     } catch (error) {
+//         res.status(500).json({ message: "Error updating profile picture", error });
+//     }
+// };
 const allUsers = async (req, res) => {
   const query = req.query.search
     ? {
@@ -181,4 +181,4 @@ const allUsers = async (req, res) => {
   res.send(users);
 };
 
-export { registerUser, loginUser, allUsers, updateUserProfile, updateProfilePic,getUserProfile };
+export { registerUser, loginUser, allUsers, getUserProfile };

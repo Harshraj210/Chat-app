@@ -9,7 +9,7 @@ import {
   addToGroup,
   removeFromGroup,
   
-} from '../controllers/chatController.js';
+} from '../controllers/chatcontroller.js';
 const router = express.Router();
 
 // This route handles two different methods:

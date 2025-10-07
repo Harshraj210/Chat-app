@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import userRoutes from "./routes/userRoutes.js.js";
+import userRoutes from "./routes/route.js";
 import chatRoute from "./routes/chatroute.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
@@ -11,7 +11,12 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+ app.use(cors());
+// app.use(cors({
+//   origin: "http://localhost:3000",
+//   credentials: true,
+// }));
+
 app.use(express.json());
 
 app.use("/api/user", userRoutes);
@@ -28,7 +33,8 @@ const io = new Server(server, {
   // if no message comes from a client for 1 min disconnect it
   pingTimeout: 60000,
   cors: {
-    origin: "http://localhost:3001",
+    origin:"*"
+    // origin: "http://localhost:3000",
   },
 });
 
@@ -56,7 +62,7 @@ io.on("connection", (socket) => {
     chat.users.forEach((user) => {
       if (user._id == newMessageReceived.sender._id) return;
       console.log(`Broadcasting message to user: ${user.name}`);
-      // Use the corrected event name "message received"
+      
       socket.in(user._id).emit("message received", newMessageReceived);
     });
   });
