@@ -46,7 +46,7 @@ const Drawer = () => {
           Expires: "0",
         },
       };
-      const { data } = await axios.get(`/api/users?search=${search}`, config);
+      const { data } = await axios.get(`/api/user?search=${search}`, config);
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
@@ -86,7 +86,7 @@ const Drawer = () => {
       {/* ======================= */}
       <div className="w-full flex justify-between items-center bg-gray-800 p-3 border-b-2 border-gray-700 flex-wrap sm:flex-nowrap">
         {/* Search Button (Left) */}
-        {/* 3. Add motion to button */}
+        {/*  Add motion to button */}
         <motion.button
           onClick={() => setIsDrawerOpen(true)}
           whileHover={{ scale: 1.05 }}
