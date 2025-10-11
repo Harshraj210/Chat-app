@@ -32,7 +32,7 @@ const Drawer = () => {
   const navigate = useNavigate();
 
   const handleSearch = async () => {
-    if (!search) {
+    if (!search.trim()) {
       console.log("Please enter something to search!!");
       return;
     }

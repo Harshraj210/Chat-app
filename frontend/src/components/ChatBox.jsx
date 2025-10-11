@@ -6,7 +6,8 @@ import io from "socket.io-client";
 
 import { motion, AnimatePresence } from "framer-motion";
 
-const ENDPOINT = "http://localhost:3000";
+const ENDPOINT = "http://localhost:5000";
+var socket
 
 // .Define animation variants for the list and its items
 const containerVariants = {
