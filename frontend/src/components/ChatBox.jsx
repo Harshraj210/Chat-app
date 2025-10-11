@@ -7,6 +7,7 @@ import io from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ENDPOINT = "http://localhost:5000";
+// it is outside the component which survives even after server is discoonected   and reused  instead of creating the new connection every time 
 var socket
 
 // .Define animation variants for the list and its items
