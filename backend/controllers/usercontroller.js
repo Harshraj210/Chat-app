@@ -86,6 +86,7 @@ const updateUserProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { name, bio },
+      // toupdate current document
       { new: true }
     ).select("-password");
 
@@ -143,7 +144,7 @@ const allUsers = async (req, res) => {
   const query = req.query.search
     ? {
         $or: [
-
+          // regex --> used for pattern matching 
           // $options: "i" → makes it case-insensitive
           { name: { $regex: req.query.search, $options: "i" } },
           { email: { $regex: req.query.search, $options: "i" } },

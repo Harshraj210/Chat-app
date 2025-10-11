@@ -3,9 +3,9 @@ import {
   registerUser,
   loginUser,
   allUsers,
-  // updateUserProfile,
-  // updateProfilePic,
-  getUserProfile
+  updateUserProfile,
+  updateProfilePic,
+  getUserProfile,
 } from "../controllers/usercontroller.js";
 import protect from "../middleware/authentication.js";
 
@@ -19,9 +19,8 @@ router.post("/login", loginUser);
 
 // router.put("/update-pic", protect, updateProfilePic);
 // router.put("/update-profile", protect, updateUserProfile);
-router
-  .route("/profile")
-  .get(protect, getUserProfile)
-  // .put(protect,updateUserProfile );
+router.route("/profile")
+.get(protect, getUserProfile)
+ .put(protect,updateUserProfile );
 
 export default router;
