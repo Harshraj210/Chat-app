@@ -13,8 +13,11 @@ const ProfileModal = ({ isOpen, onClose }) => {
   const [name,setName]=useState(user?.user?.name || "")
   const [bio,setBio]=useState(user?.user?.bio || "user is mysterious")
   const[profilePic,setProfilePic]=useState(user?.user?.pic)
+
+  // this effect resets the models state whenever states changes
   useEffect(()=>{
     if(user?.user){
+      // setting up datas
       setName(user.user.name)
       setBio(user.user.bio || "user is mysterious")
       setProfilePic(user.user.pic);
@@ -22,5 +25,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
     if(!isOpen) setIsEditing(false)
       // this runs only when user opens it and details are changed
   },[isOpen,user])
+
 
 }
