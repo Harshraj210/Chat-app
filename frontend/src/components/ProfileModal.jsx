@@ -43,17 +43,20 @@ const ProfileModal = ({ isOpen, onClose }) => {
       try {
        const result = await axios.post(
           "https://api.cloudinary.com/v1_1/dac3utuqb/image/upload",
+          // data-->conatains all the image files ,presets
           data
         );
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
         const { data: updatedUserData } = await axios.put(
             '/api/user/update-pic', 
             // With axios, the response is inside the .data property
+            // result.data.url -->is the public URL of the uploaded image.
             { pic: result.data.url.toString() }, 
             config
         );
         // Update your application's state
            localStorage.setItem("userInfo", JSON.stringify(updatedUserData));
+          //  live update UI without reload.
         setUser(updatedUserData);
         setProfilePic(updatedUserData.user.pic);
         toast.success("Profile picture updated!");
@@ -61,6 +64,8 @@ const ProfileModal = ({ isOpen, onClose }) => {
       } catch (error) {
         toast.error("Image upload failed. Please try again.");
       }
+      // finally runs after either try completes successfully or after catch runs due to an error
+      // Use it to perform cleanup that must happen regardless of success/failure
       finally {
         setPicLoading(false);
       }
