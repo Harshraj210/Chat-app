@@ -14,6 +14,11 @@ const ProfileModal = ({ isOpen, onClose }) => {
   const [bio,setBio]=useState(user?.user?.bio || "user is mysterious")
   const[profilePic,setProfilePic]=useState(user?.user?.pic)
 
+  // states for loading indicators
+
+  const [loading ,setLoading]=useState(false)
+  const [picLoading,stePicLoading]=useState(false)
+
   // this effect resets the models state whenever states changes
   useEffect(()=>{
     if(user?.user){
@@ -25,6 +30,13 @@ const ProfileModal = ({ isOpen, onClose }) => {
     if(!isOpen) setIsEditing(false)
       // this runs only when user opens it and details are changed
   },[isOpen,user])
+
+  const handlePicUpload= async(pics)=>{
+    if(!pics){
+      return toast.error("Please upload photo!!")
+    }
+    
+  }
 
 
 }
