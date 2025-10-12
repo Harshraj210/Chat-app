@@ -68,23 +68,22 @@ const sendMediaMessage = async (req, res) => {
     chatId: chatId,
     mediaUrl: mediaUrl,
     mediaType: mediaType,
+    // content must be media
     content: mediaType === "image" ? "send photo" : "send video",
   };
   try {
-    const message = new Message.create(newMessage)
-    message = await message.populate("sender","name pic")
-    message = await message.populate("chat")
-    message = await User.populate(message,{
-      "path":"chat.user",
-      select:"name,pic,email"
-
-    })
-     await Chat.findByIdAndUpdate({latestMessage:message})
-     res.json(message)
-      
-    
+    // creating new messages
+    const message = new Message.create(newMessage);
+    message = await message.populate("sender", "name pic");
+    message = await message.populate("chat");
+    message = await User.populate(message, {
+      path: "chat.user",
+      select: "name,pic,email",
+    });
+    await Chat.findByIdAndUpdate({ latestMessage: message });
+    res.json(message);
   } catch (error) {
-    res.status(400).json({message:error.message})
+    res.status(400).json({ message: error.message });
   }
 };
-export { allMessages, sendMessage , sendMediaMessage};
+export { allMessages, sendMessage, sendMediaMessage };
