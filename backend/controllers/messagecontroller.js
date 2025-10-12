@@ -76,6 +76,7 @@ const sendMediaMessage = async (req, res) => {
     message = await message.populate("chat")
     message = await User.populate(message,{
       "path":"chat.user",
+      select:"name,pic,email"
 
     })
      await Chat.findByIdAndUpdate({latestMessage:message})
@@ -86,4 +87,4 @@ const sendMediaMessage = async (req, res) => {
     res.status(400).json({message:error.message})
   }
 };
-export { allMessages, sendMessage };
+export { allMessages, sendMessage , sendMediaMessage};
