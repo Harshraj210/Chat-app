@@ -4,6 +4,7 @@ import { useChatState } from "../context/ChatProvider";
 import axios from "axios";
 
 import { motion, AnimatePresence } from "framer-motion";
+import ProfileModal from "./ProfileModal";
 
 //  Defineing variants for search results
 const listVariants = {
@@ -25,6 +26,8 @@ const itemVariants = {
 const Drawer = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
+  // This tells the Drawer that the ProfileModal component exists
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -86,7 +89,7 @@ const Drawer = () => {
       {/* ======================= */}
       <div className="w-full flex justify-between items-center bg-gray-800 p-3 border-b-2 border-gray-700 flex-wrap sm:flex-nowrap">
         {/* Search Button (Left) */}
-        {/*  Add motion to button */}
+        {/* Add motion to button */}
         <motion.button
           onClick={() => setIsDrawerOpen(true)}
           whileHover={{ scale: 1.05 }}
@@ -139,9 +142,13 @@ const Drawer = () => {
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 mt-2 w-40 bg-gray-700 rounded-md shadow-lg py-1 z-50"
                 >
+                  
                   <button
                     className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-600"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={() => {
+                      setIsProfileModalOpen(true); // Open the modal
+                      setIsMenuOpen(false); // Close the dropdown
+                    }}
                   >
                     My Profile
                   </button>
@@ -158,7 +165,7 @@ const Drawer = () => {
         </div>
       </div>
 
-      {/*  Wrap Drawer and Overlay in AnimatePresence */}
+      {/* Wrap Drawer and Overlay in AnimatePresence */}
       <AnimatePresence>
         {isDrawerOpen && (
           <>
@@ -210,7 +217,7 @@ const Drawer = () => {
                   </button>
                 </div>
 
-                {/*  Animate the search results list */}
+                {/* Animate the search results list */}
                 <motion.div
                   variants={listVariants}
                   initial="hidden"
@@ -255,8 +262,15 @@ const Drawer = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/*  Render the ProfileModal and control its visibility with state */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </>
   );
 };
 
 export default Drawer;
+
