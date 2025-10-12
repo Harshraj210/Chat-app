@@ -1,18 +1,19 @@
-import User from "../models/userModel.js"
-import Chat from "../models/chatmodel.js"
-import Message from "../models/messagemodel.js"
+import User from "../models/userModel.js";
+import Chat from "../models/chatmodel.js";
+import Message from "../models/messagemodel.js";
+import { populate } from "dotenv";
 // this file handles all the logic of send updating recieving individula messages
-const allMessages = async(req,res)=>{
+const allMessages = async (req, res) => {
   try {
-    const messages = await Message.find({chat:req.params.chatId})
-    // getting name email instaed of sender ID
-    .populate("sender","name email")
-    .populate("chat")
-    res.json(messages)
+    const messages = await Message.find({ chat: req.params.chatId })
+      // getting name email instaed of sender ID
+      .populate("sender", "name email")
+      .populate("chat");
+    res.json(messages);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
-}
+};
 const sendMessage = async (req, res) => {
   const { content, chatId } = req.body;
 
@@ -34,7 +35,7 @@ const sendMessage = async (req, res) => {
     //  Fetch the newly created message to populate it correctly
     message = await Message.findById(message._id)
       .populate("sender", "name") // Populate sender's name
-      .populate("chat");          // Populate the chat details
+      .populate("chat"); // Populate the chat details
 
     //  Further populate the users within the chat object
     message = await User.populate(message, {
@@ -51,8 +52,38 @@ const sendMessage = async (req, res) => {
     res.json(message);
   } catch (error) {
     // This will log the specific database error to your backend terminal
-    console.error("ERROR SENDING MESSAGE:", error); 
-    res.status(400).json({ message: "Failed to send message", details: error.message });
+    console.error("ERROR SENDING MESSAGE:", error);
+    res
+      .status(400)
+      .json({ message: "Failed to send message", details: error.message });
   }
 };
-export {allMessages, sendMessage}
+const sendMediaMessage = async (req, res) => {
+  const { chatId, mediaUrl, mediaType } = req.body;
+  if (chatId || !mediaType || !mediaType) {
+    return res.status(400).json({ message: "invalid data passes in media!!" });
+  }
+  const newMessage = {
+    sender: req.user._id,
+    chatId: chatId,
+    mediaUrl: mediaUrl,
+    mediaType: mediaType,
+    content: mediaType === "image" ? "send photo" : "send video",
+  };
+  try {
+    const message = new Message.create(newMessage)
+    message = await message.populate("sender","name pic")
+    message = await message.populate("chat")
+    message = await User.populate(message,{
+      "path":"chat.user",
+
+    })
+     await Chat.findByIdAndUpdate({latestMessage:message})
+     res.json(message)
+      
+    
+  } catch (error) {
+    res.status(400).json({message:error.message})
+  }
+};
+export { allMessages, sendMessage };
