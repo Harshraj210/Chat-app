@@ -3,12 +3,13 @@ import axios from "axios";
 import { useChatState } from "../context/ChatProvider";
 import Picker from "emoji-picker-react";
 import io from "socket.io-client";
+import toast from "react-hot-toast";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 const ENDPOINT = "http://localhost:5000";
-// it is outside the component which survives even after server is discoonected   and reused  instead of creating the new connection every time 
-var socket
+// it is outside the component which survives even after server is discoonected   and reused  instead of creating the new connection every time
+var socket;
 
 // .Define animation variants for the list and its items
 const containerVariants = {
@@ -25,7 +26,6 @@ const messageVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
-
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -59,7 +59,10 @@ const ChatBox = () => {
     if (!selectedChat || !user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const { data } = await axios.get(`/api/message/${selectedChat._id}`, config);
+      const { data } = await axios.get(
+        `/api/message/${selectedChat._id}`,
+        config
+      );
       setMessages(data);
     } catch (error) {
       console.error("Error fetching messages", error);
@@ -77,14 +80,17 @@ const ChatBox = () => {
     if (!socket) return;
 
     socket.on("typing", (typingUser) => {
-      setTypingUsers((prev) => (!prev.includes(typingUser.name) ? [...prev, typingUser.name] : prev));
+      setTypingUsers((prev) =>
+        !prev.includes(typingUser.name) ? [...prev, typingUser.name] : prev
+      );
     });
     socket.on("stop typing", (typingUser) => {
       setTypingUsers((prev) => prev.filter((u) => u !== typingUser.name));
     });
 
     const messageListener = (newMessageReceived) => {
-      if (!selectedChat || selectedChat._id !== newMessageReceived.chat._id) return;
+      if (!selectedChat || selectedChat._id !== newMessageReceived.chat._id)
+        return;
       setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
     };
 
@@ -97,15 +103,27 @@ const ChatBox = () => {
     };
   }, [selectedChat, messages, socket]);
 
+  //  Function to send a regular text message
+
   const sendMessage = async (event) => {
     event.preventDefault();
     if (selectedChat && newMessage.trim()) {
       try {
-        const config = { headers: { "Content-type": "application/json", Authorization: `Bearer ${user.token}` } };
+        const config = {
+          headers: {
+            "Content-type": "application/json",
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
         const messageToSend = newMessage;
+        // clearing the input immidiately
         setNewMessage("");
 
-        const { data } = await axios.post("/api/message", { content: messageToSend, chatId: selectedChat._id }, config);
+        const { data } = await axios.post(
+          "/api/message",
+          { content: messageToSend, chatId: selectedChat._id },
+          config
+        );
         socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
@@ -113,10 +131,66 @@ const ChatBox = () => {
       }
     }
   };
+  // function to handle photo , video upload
+
+  const handleMediaUpload = async (file) => {
+    if (!file) return;
+    setMediaLoading(true);
+    const ToastId = toast.loading("uploading media");
+
+    // /this helps to figure out what kind of file it is
+    const mediaType = file.type.startswith("image")
+      ? "image"
+      : file.type.startswith("video")
+      ? "video"
+      : null;
+    if (!mediaType) {
+      toast.error("Please select valid image or video");
+      setMediaLoading(false);
+      return;
+    }
+    // formData --> used to send images videos to server via HTTP
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", "chat-app");
+    data.append("cloud_name", "dac3utuqb");
+
+    // uploading it to cloudinary
+    try {
+      const result = await axios.post(
+        "https://api.cloudinary.com/v1_1/dac3utuqb/image/upload",
+        data
+      );
+      // 
+      const config = {
+        headers: {
+          // telling the content type is in json
+          "content-type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const {data:messageData}= await axios.post("api/user/media",
+        {
+          chatId:selectedChat._id,
+          // The Cloudinary URL of the uploaded file
+          mediaUrl:result.data.secure_url,
+          mediaType:mediaType
+        }  
+      )
+
+
+  
+    } catch (error) {
+      
+    }
+
+  };
 
   const getSender = (loggedUser, users) => {
     if (!loggedUser || !users) return "Unknown";
-    return users[0]?._id === loggedUser.user._id ? users[1].name : users[0].name;
+    return users[0]?._id === loggedUser.user._id
+      ? users[1].name
+      : users[0].name;
   };
 
   const onEmojiClick = (emojiObject) => {
@@ -125,7 +199,10 @@ const ChatBox = () => {
   };
 
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const handleTyping = () => {
@@ -135,21 +212,26 @@ const ChatBox = () => {
     clearTimeout(window.typingTimeout);
     window.typingTimeout = setTimeout(() => {
       setIsTyping(false);
-      socket?.emit("stop typing", { chatId: selectedChat._id, name: user.user.name });
+      socket?.emit("stop typing", {
+        chatId: selectedChat._id,
+        name: user.user.name,
+      });
     }, 1000);
   };
 
   return (
     <div
       className={`flex flex-col w-full h-full rounded-2xl transition-all duration-300 overflow-hidden ${
-        selectedChat ? "bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]" : "bg-gray-800 items-center justify-center"
+        selectedChat
+          ? "bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]"
+          : "bg-gray-800 items-center justify-center"
       }`}
     >
       {selectedChat ? (
         <>
           {/* Header */}
           <div className="flex items-center justify-between text-xl sm:text-2xl font-semibold p-3 border-b border-white/10 backdrop-blur-md bg-white/5">
-             {/*  Add motion to back button */}
+            {/*  Add motion to back button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -180,7 +262,9 @@ const ChatBox = () => {
                   key={m._id}
                   variants={messageVariants}
                   className={`flex items-end space-x-2 ${
-                    m.sender?._id === user.user._id ? "justify-end" : "justify-start"
+                    m.sender?._id === user.user._id
+                      ? "justify-end"
+                      : "justify-start"
                   }`}
                 >
                   <div
@@ -193,7 +277,9 @@ const ChatBox = () => {
                     <p>{m.content}</p>
                     <p
                       className={`text-xs mt-1 ${
-                        m.sender._id === user.user._id ? "text-blue-200" : "text-gray-400"
+                        m.sender._id === user.user._id
+                          ? "text-blue-200"
+                          : "text-gray-400"
                       } text-right`}
                     >
                       {formatTimestamp(m.createdAt)}
@@ -211,7 +297,8 @@ const ChatBox = () => {
                     exit={{ opacity: 0, y: 10 }}
                     className="text-teal-300 text-sm italic"
                   >
-                    {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing...
+                    {typingUsers.join(", ")}{" "}
+                    {typingUsers.length === 1 ? "is" : "are"} typing...
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -274,7 +361,7 @@ const ChatBox = () => {
               }}
               className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
-             {/*  Add motion to send button */}
+            {/*  Add motion to send button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -294,7 +381,9 @@ const ChatBox = () => {
         </>
       ) : (
         <div className="text-center text-gray-400 p-8">
-          <h3 className="text-2xl font-medium text-teal-400 mb-2">Select a user to start chatting 💬</h3>
+          <h3 className="text-2xl font-medium text-teal-400 mb-2">
+            Select a user to start chatting 💬
+          </h3>
           <p className="text-gray-500">Your conversations will appear here.</p>
         </div>
       )}
