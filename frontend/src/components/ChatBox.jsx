@@ -136,7 +136,7 @@ const ChatBox = () => {
   const handleMediaUpload = async (file) => {
     if (!file) return;
     setMediaLoading(true);
-    const ToastId = toast.loading("uploading media");
+    const toastId = toast.loading("uploading media");
 
     // /this helps to figure out what kind of file it is
     const mediaType = file.type.startswith("image")
@@ -161,7 +161,7 @@ const ChatBox = () => {
         "https://api.cloudinary.com/v1_1/dac3utuqb/image/upload",
         data
       );
-      // 
+      //
       const config = {
         headers: {
           // telling the content type is in json
@@ -169,21 +169,24 @@ const ChatBox = () => {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const {data:messageData}= await axios.post("api/user/media",
+      const { data: messageData } = await axios.post(
+        "api/user/media",
         {
-          chatId:selectedChat._id,
+          chatId: selectedChat._id,
           // The Cloudinary URL of the uploaded file
-          mediaUrl:result.data.secure_url,
-          mediaType:mediaType
-        }  
-      )
-
-
-  
+          mediaUrl: result.data.secure_url,
+          mediaType: mediaType,
+        },
+        config
+      );
+      socket.emit("new message", messageData);
+      setMessages([...messages, messageData]);
+      toast.success("Media sent!", { id: toastId });
     } catch (error) {
-      
+      toast.error("Media upload failed.", { id: toastId });
+    } finally {
+      setMediaLoading(false);
     }
-
   };
 
   const getSender = (loggedUser, users) => {
