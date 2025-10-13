@@ -179,7 +179,11 @@ const ChatBox = () => {
         },
         config
       );
+      // connecting frontend using sockets
+      // socket.emit --> used to send event to server
       socket.emit("new message", messageData);
+      // cretates array for new array for new and old msgs
+      // ... --> spread operator (copying everything from messages and adding one more item  without changing original arrray )
       setMessages([...messages, messageData]);
       toast.success("Media sent!", { id: toastId });
     } catch (error) {
