@@ -34,6 +34,7 @@ const ChatBox = () => {
   const [typingUsers, setTypingUsers] = useState([]);
   const [socket, setSocket] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [mediaLoading,setMediaLoading]= useState(false)
   const { user, selectedChat, setSelectedChat } = useChatState();
   const messagesEndRef = useRef(null);
 
@@ -139,7 +140,7 @@ const ChatBox = () => {
     const toastId = toast.loading("uploading media");
 
     // /this helps to figure out what kind of file it is
-    const mediaType = file.type.startswith("image")
+    const mediaType = file.type.startsWith("image")
       ? "image"
       : file.type.startswith("video")
       ? "video"
