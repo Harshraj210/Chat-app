@@ -34,11 +34,11 @@ const ChatBox = () => {
   const [typingUsers, setTypingUsers] = useState([]);
   const [socket, setSocket] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
-  const [mediaLoading,setMediaLoading]= useState(false)
+  const [mediaLoading, setMediaLoading] = useState(false);
   const { user, selectedChat, setSelectedChat } = useChatState();
   const messagesEndRef = useRef(null);
 
-  // Function to scroll to the bottom of the messages
+  // Function to scroll to the bottom of the messages 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -50,6 +50,7 @@ const ChatBox = () => {
   useEffect(() => {
     if (!user) return;
     const newSocket = io(ENDPOINT);
+    // storing socket in react state
     setSocket(newSocket);
     newSocket.emit("setup", user);
     newSocket.on("connected", () => console.log("Socket.IO Connected!"));
@@ -159,7 +160,7 @@ const ChatBox = () => {
     // uploading it to cloudinary
     try {
       const result = await axios.post(
-        "https://api.cloudinary.com/v1_1/dac3utuqb/image/upload",
+        `https://api.cloudinary.com/v1_1/dac3utuqb/${mediaType}/upload`,
         data
       );
       //
@@ -171,7 +172,7 @@ const ChatBox = () => {
         },
       };
       const { data: messageData } = await axios.post(
-        "api/user/media",
+        "api/message/media",
         {
           chatId: selectedChat._id,
           // The Cloudinary URL of the uploaded file
@@ -237,9 +238,7 @@ const ChatBox = () => {
     >
       {selectedChat ? (
         <>
-          {/* Header */}
           <div className="flex items-center justify-between text-xl sm:text-2xl font-semibold p-3 border-b border-white/10 backdrop-blur-md bg-white/5">
-            {/*  Add motion to back button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -255,9 +254,7 @@ const ChatBox = () => {
             </span>
           </div>
 
-          {/* Messages container */}
-          <div className="flex-grow flex flex-col-reverse bg-black/20 rounded-lg m-3 p-3 overflow-y-auto shadow-inner scrollbar-thin scrollbar-thumb-teal-500/40">
-            {/* . Wrap the message list in motion.div */}
+          <div className="flex-grow flex flex-col-reverse bg-black/20 m-3 p-3 overflow-y-auto shadow-inner">
             <motion.div
               className="flex flex-col space-y-3"
               variants={containerVariants}
@@ -265,7 +262,6 @@ const ChatBox = () => {
               animate="visible"
             >
               {messages.map((m) => (
-                // Animate each message
                 <motion.div
                   key={m._id}
                   variants={messageVariants}
@@ -276,16 +272,35 @@ const ChatBox = () => {
                   }`}
                 >
                   <div
-                    className={`px-4 py-2 rounded-2xl max-w-xs sm:max-w-md break-words shadow-md ${
+                    className={`p-1.5 rounded-2xl max-w-xs sm:max-w-md break-words shadow-md ${
                       m.sender?._id === user.user._id
                         ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-br-none"
                         : "bg-gray-700/70 text-gray-100 rounded-bl-none"
                     }`}
                   >
-                    <p>{m.content}</p>
+                    {m.mediaType === "image" && (
+                      <img
+                        src={m.mediaUrl}
+                        alt="Sent"
+                        className="rounded-xl max-h-60 cursor-pointer"
+                        onClick={() => window.open(m.mediaUrl, "_blank")}
+                      />
+                    )}
+                    {m.mediaType === "video" && (
+                      <video
+                        src={m.mediaUrl}
+                        controls
+                        className="rounded-xl max-h-60"
+                      />
+                    )}
+
+                    {m.content && !m.mediaUrl && (
+                      <p className="px-3 py-1">{m.content}</p>
+                    )}
+
                     <p
-                      className={`text-xs mt-1 ${
-                        m.sender._id === user.user._id
+                      className={`text-xs mt-1 px-2 pb-1 ${
+                        m.sender?._id === user.user._id
                           ? "text-blue-200"
                           : "text-gray-400"
                       } text-right`}
@@ -295,86 +310,89 @@ const ChatBox = () => {
                   </div>
                 </motion.div>
               ))}
-
-              {/* Typing indicator */}
-              <AnimatePresence>
-                {typingUsers.length > 0 && selectedChat?.isGroupChat && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="text-teal-300 text-sm italic"
-                  >
-                    {typingUsers.join(", ")}{" "}
-                    {typingUsers.length === 1 ? "is" : "are"} typing...
-                  </motion.div>
-                )}
-              </AnimatePresence>
               <div ref={messagesEndRef} />
             </motion.div>
           </div>
 
-          {/* Message input */}
           <form
             onSubmit={sendMessage}
             className="p-3 border-t border-white/10 bg-white/5 flex items-center space-x-3"
           >
-            <div className="relative">
-              {/*  Add motion to emoji button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                type="button"
-                onClick={() => setShowPicker((val) => !val)}
-                className="p-2 text-gray-300 hover:text-teal-400 transition-all"
+            <label
+              htmlFor="media-upload"
+              className={`cursor-pointer p-2 text-gray-300 rounded-full transition-colors ${
+                mediaLoading
+                  ? "opacity-50"
+                  : "hover:text-teal-400 hover:bg-slate-700"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                />
+              </svg>
+              <input
+                id="media-upload"
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(e) => handleMediaUpload(e.target.files[0])}
+                disabled={mediaLoading}
+              />
+            </label>
+
+            <div className="relative flex-grow">
+              <input
+                type="text"
+                placeholder={
+                  mediaLoading ? "Uploading media..." : "Type a message..."
+                }
+                value={newMessage}
+                onChange={handleTyping}
+                className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                disabled={mediaLoading}
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  type="button"
+                  onClick={() => setShowPicker((val) => !val)}
+                  className="p-1 text-gray-400 hover:text-teal-400"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </motion.button>
-              {/* Wrap Emoji Picker in AnimatePresence for smooth open/close */}
-              <AnimatePresence>
-                {showPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute bottom-14 left-0 z-50"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <Picker onEmojiClick={onEmojiClick} theme="dark" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </motion.button>
+              </div>
             </div>
 
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => {
-                setNewMessage(e.target.value);
-                handleTyping();
-              }}
-              className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-            {/*  Add motion to send button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               type="submit"
-              className="p-2 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl transition-transform shadow-md"
+              className="p-2 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl transition-transform shadow-md disabled:opacity-50"
+              disabled={mediaLoading || !newMessage.trim()}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -385,6 +403,20 @@ const ChatBox = () => {
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
               </svg>
             </motion.button>
+
+            <AnimatePresence>
+              {showPicker && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute bottom-20 right-4 z-50"
+                >
+                  <Picker onEmojiClick={onEmojiClick} theme="dark" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
         </>
       ) : (

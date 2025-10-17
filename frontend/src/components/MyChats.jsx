@@ -49,7 +49,7 @@ const MyChats = () => {
   return (
      <>
       {/* Chats List */}
-      <motion.div // 3. Animate the main container on initial load
+      <motion.div 
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
@@ -60,7 +60,7 @@ const MyChats = () => {
         {/* Header with title & New Group Chat button */}
         <div className="pb-3 px-3 text-xl sm:text-2xl font-bold w-full flex justify-between items-center flex-wrap sm:flex-nowrap gap-2">
           <span className="w-full sm:w-auto text-center sm:text-left">My Chats</span>
-          {/* 4. Convert button to motion.button and add interaction animations */}
+          
           <motion.button
             onClick={() => setIsGroupModalOpen(true)}
             whileHover={{ scale: 1.05 }}
@@ -81,7 +81,7 @@ const MyChats = () => {
         {/* Scrollable chat list */}
         <div className="flex flex-col p-3 bg-gray-700 w-full h-full rounded-lg overflow-y-auto max-h-[70vh] sm:max-h-full">
           {chats ? (
-            // 5. Apply the container variants to the list wrapper
+            // Apply the container variants to the list wrapper
             <motion.div
               className="space-y-2"
               variants={containerVariants}
@@ -89,7 +89,7 @@ const MyChats = () => {
               animate="visible"
             >
               {chats.map((chat) => (
-                // 6. Convert chat item to motion.div and apply item variants + interactions
+               
                 <motion.div
                   onClick={() => setSelectedChat(chat)}
                   key={chat._id}
@@ -120,7 +120,7 @@ const MyChats = () => {
         </div>
       </motion.div>
 
-      {/* Group Chat Modal (no changes needed here) */}
+     
       <GroupChatModal
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
