@@ -43,15 +43,15 @@ const sendMessage = async (req, res) => {
       select: "name email",
     });
 
-    // 4. Update the chat's 'latestMessage' field
+    //  Update the chat's 'latestMessage' field
     await Chat.findByIdAndUpdate(req.body.chatId, {
-      latestMessage: message, // Ensure this matches your schema (camelCase)
+      latestMessage: message, 
     });
 
     //  Send the complete message back
     res.json(message);
   } catch (error) {
-    // This will log the specific database error to your backend terminal
+    // This will log the specific database error to  backend terminal
     console.error("ERROR SENDING MESSAGE:", error);
     res
       .status(400)
@@ -60,12 +60,12 @@ const sendMessage = async (req, res) => {
 };
 const sendMediaMessage = async (req, res) => {
   const { chatId, mediaUrl, mediaType } = req.body;
-  if (chatId || !mediaType || !mediaType) {
-    return res.status(400).json({ message: "invalid data passes in media!!" });
+  if (!chatId || !mediaType || !mediaType) {
+    return res.status(400).json({ message: "invalid data passed in media!!" });
   }
   const newMessage = {
     sender: req.user._id,
-    chatId: chatId,
+    chat: chatId,
     mediaUrl: mediaUrl,
     mediaType: mediaType,
     // content must be media
