@@ -38,7 +38,7 @@ const ChatBox = () => {
   const { user, selectedChat, setSelectedChat } = useChatState();
   const messagesEndRef = useRef(null);
 
-  // Function to scroll to the bottom of the messages 
+  // Function to scroll to the bottom of the messages (it shows the latest message at top)
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -109,7 +109,7 @@ const ChatBox = () => {
 
   const sendMessage = async (event) => {
     event.preventDefault();
-    if (selectedChat && newMessage.trim()) {
+    if (socket && selectedChat && newMessage.trim()) {
       try {
         const config = {
           headers: {
@@ -137,59 +137,85 @@ const ChatBox = () => {
 
   const handleMediaUpload = async (file) => {
     if (!file) return;
+    if (!selectedChat) {
+      toast.error("Please select a chat first.");
+      return;
+    }
     setMediaLoading(true);
-    const toastId = toast.loading("uploading media");
+    const toastId = toast.loading("Uploading media...");
 
-    // /this helps to figure out what kind of file it is
-    const mediaType = file.type.startsWith("image")
-      ? "image"
-      : file.type.startswith("video")
-      ? "video"
-      : null;
+    let mediaType = null;
+    const fileTypeLower = file.type.toLowerCase(); // Convert type to lowercase
+    if (fileTypeLower.startsWith("image/")) {
+      mediaType = "image";
+    } else if (fileTypeLower.startsWith("video/")) {
+      mediaType = "video";
+    }
+
     if (!mediaType) {
-      toast.error("Please select valid image or video");
+      toast.error("Invalid file type. Please select an image or video.", {
+        id: toastId,
+      });
       setMediaLoading(false);
       return;
     }
-    // formData --> used to send images videos to server via HTTP
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", "chat-app");
-    data.append("cloud_name", "dac3utuqb");
 
-    // uploading it to cloudinary
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "chat-app");
+    formData.append("cloud_name", "dac3utuqb");
+
     try {
-      const result = await axios.post(
+      // 1. Upload to Cloudinary
+      const cloudinaryResult = await axios.post(
         `https://api.cloudinary.com/v1_1/dac3utuqb/${mediaType}/upload`,
-        data
+        formData
       );
-      //
+
+      const mediaUrl = cloudinaryResult.data.secure_url;
+      if (!mediaUrl) {
+        throw new Error("Cloudinary upload succeeded but returned no URL.");
+      }
+
+      // Prepare data for your backend
+      const backendPayload = {
+        chatId: selectedChat._id,
+        mediaUrl: mediaUrl.toString(),
+        mediaType: mediaType,
+      };
+
+      console.log("Sending to backend:", backendPayload);
+
+      //  Send data to YOUR backend
       const config = {
         headers: {
-          // telling the content type is in json
-          "content-type": "application/json",
+          "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
       };
       const { data: messageData } = await axios.post(
-        "api/message/media",
-        {
-          chatId: selectedChat._id,
-          // The Cloudinary URL of the uploaded file
-          mediaUrl: result.data.secure_url,
-          mediaType: mediaType,
-        },
+        "/api/message/media", // Ensure leading slash
+        backendPayload,
         config
       );
-      // connecting frontend using sockets
+
+      // Emit via socket and update state
       // socket.emit --> used to send event to server
-      socket.emit("new message", messageData);
+      if (socket) socket.emit("new message", messageData);
       // cretates array for new array for new and old msgs
       // ... --> spread operator (copying everything from messages and adding one more item  without changing original arrray )
-      setMessages([...messages, messageData]);
+
+      setMessages((prev) => [...prev, messageData]);
       toast.success("Media sent!", { id: toastId });
     } catch (error) {
       toast.error("Media upload failed.", { id: toastId });
+      
+      console.error("Media Upload Error:", error);
+      if (error.response) {
+        // Log backend error details if available
+        console.error("Backend Response Data:", error.response.data);
+        console.error("Backend Response Status:", error.response.status);
+      }
     } finally {
       setMediaLoading(false);
     }
@@ -202,6 +228,7 @@ const ChatBox = () => {
       : users[0].name;
   };
 
+  // formData --> used to send images videos to server via HTTP
   const onEmojiClick = (emojiObject) => {
     setNewMessage((prevInput) => prevInput + emojiObject.emoji);
     setShowPicker(false);
