@@ -38,7 +38,7 @@ const ChatBox = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   // string to store url image to be dispalyed
   const [lightboxImageUrl, setLightboxImageUrl] = useState("");
-  const [lightboxMediaType, setLightboxMediaType]= useState("")
+  const [lightboxMediaType, setLightboxMediaType] = useState("");
   const { user, selectedChat, setSelectedChat } = useChatState();
   const messagesEndRef = useRef(null);
 
@@ -316,17 +316,23 @@ const ChatBox = () => {
                         className="rounded-xl max-h-60 cursor-pointer"
                         onClick={() => {
                           // Store the URL of the clicked image
-                          setLightboxImageUrl(m.mediaUrl); 
+                          setLightboxImageUrl(m.mediaUrl);
                           // Set the lightbox to open
-                          setLightboxOpen(true); 
+                          setLightboxOpen(true);
                         }}
                       />
                     )}
                     {m.mediaType === "video" && (
                       <video
                         src={m.mediaUrl}
+                        onClick={() => {
+                          setLightboxImageUrl(m.mediaUrl);
+                          setLightboxMediaType("video"); 
+                          setLightboxOpen(true);
+                        }}
+                        poster="path/to/thumbnail.jpg"
                         controls
-                        className="rounded-xl max-h-60"
+                        className="rounded-xl max-h-60 cursor-pointer"
                       />
                     )}
 
@@ -486,12 +492,25 @@ const ChatBox = () => {
                 className="block object-contain max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg"
               />
               <motion.button
-                 whileHover={{ scale: 1.2, rotate: 90 }}
-                 whileTap={{ scale: 0.9 }}
-                 className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full"
-                 onClick={() => setLightboxOpen(false)}
+                whileHover={{ scale: 1.2, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full"
+                onClick={() => setLightboxOpen(false)}
               >
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </motion.button>
             </motion.div>
           </motion.div>
