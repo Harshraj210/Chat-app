@@ -11,7 +11,7 @@ const ENDPOINT = "http://localhost:5000";
 // it is outside the component which survives even after server is discoonected   and reused  instead of creating the new connection every time
 var socket;
 
-// .Define animation variants for the list and its items
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -327,7 +327,7 @@ const ChatBox = () => {
                         src={m.mediaUrl}
                         onClick={() => {
                           setLightboxImageUrl(m.mediaUrl);
-                          setLightboxMediaType("video"); 
+                          setLightboxMediaType("video");
                           setLightboxOpen(true);
                         }}
                         poster="path/to/thumbnail.jpg"
