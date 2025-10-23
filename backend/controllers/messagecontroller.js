@@ -72,18 +72,54 @@ const sendMediaMessage = async (req, res) => {
     content: mediaType === "image" ? "send photo" : "send video",
   };
   try {
-    // creating new messages
-    const message = new Message.create(newMessage);
-    message = await message.populate("sender", "name pic");
-    message = await message.populate("chat");
-    message = await User.populate(message, {
-      path: "chat.user",
-      select: "name,pic,email",
+    //  Create the message
+    let createdMessage = await Message.create(newMessage); // Corrected create usage
+
+    
+    
+    let fullMessage = await Message.findById(createdMessage._id)
+      .populate("sender", "name pic") // Populate sender's name and pic
+      .populate({ // Populate chat and users within chat
+          path: "chat",
+          populate: {
+              path: "users",
+              select: "name pic email" 
+          }
+      });
+
+    if (!fullMessage) {
+        throw new Error("Message created but could not be found for population.");
+    }
+
+    
+    await Chat.findByIdAndUpdate(chatId, { 
+      latestMessage: fullMessage, 
     });
-    await Chat.findByIdAndUpdate({ latestMessage: message });
-    res.json(message);
+
+    //  Send the complete message back
+    res.json(fullMessage);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    
+    console.error("ERROR SENDING MESSAGE:", error);
+    res
+      .status(400)
+      .json({ message: "Failed to send message", details: error.message });
   }
+  // try {
+  //   // creating new messages
+  //   // const message = new Message.create(newMessage);
+  //   const message = await Message.create(newMessage)
+  //   message = await message.populate("sender", "name pic");
+  //   message = await message.populate("chat");
+  //   message = await User.populate(message, {
+  //     path: "users",
+  //     // path: "chat.user",
+  //     select: "name,pic,email",
+  //   });
+  //   await Chat.findByIdAndUpdate({ latestMessage: message });
+  //   res.json(message);
+  // } catch (error) {
+  //   res.status(400).json({ message: error.message });
+  // }
 };
 export { allMessages, sendMessage, sendMediaMessage };
