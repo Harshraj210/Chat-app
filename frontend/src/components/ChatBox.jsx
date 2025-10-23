@@ -37,7 +37,8 @@ const ChatBox = () => {
   const [mediaLoading, setMediaLoading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   // string to store url image to be dispalyed
-  const [lightboxImageUrl, setLightboxImageUrl] = useState('');
+  const [lightboxImageUrl, setLightboxImageUrl] = useState("");
+  const [lightboxMediaType, setLightboxMediaType]= useState("")
   const { user, selectedChat, setSelectedChat } = useChatState();
   const messagesEndRef = useRef(null);
 
@@ -212,7 +213,7 @@ const ChatBox = () => {
       toast.success("Media sent!", { id: toastId });
     } catch (error) {
       toast.error("Media upload failed.", { id: toastId });
-      
+
       console.error("Media Upload Error:", error);
       if (error.response) {
         // Log backend error details if available
@@ -313,7 +314,12 @@ const ChatBox = () => {
                         src={m.mediaUrl}
                         alt="Sent"
                         className="rounded-xl max-h-60 cursor-pointer"
-                        onClick={() => window.open(m.mediaUrl, "_blank")}
+                        onClick={() => {
+                          // Store the URL of the clicked image
+                          setLightboxImageUrl(m.mediaUrl); 
+                          // Set the lightbox to open
+                          setLightboxOpen(true); 
+                        }}
                       />
                     )}
                     {m.mediaType === "video" && (
@@ -457,6 +463,40 @@ const ChatBox = () => {
           <p className="text-gray-500">Your conversations will appear here.</p>
         </div>
       )}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex justify-center items-center p-4"
+            onClick={() => setLightboxOpen(false)} // Close on backdrop click
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative max-w-full max-h-full"
+              onClick={(e) => e.stopPropagation()} // Prevent closing on image click
+            >
+              <img
+                src={lightboxImageUrl}
+                alt="Lightbox"
+                className="block object-contain max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg"
+              />
+              <motion.button
+                 whileHover={{ scale: 1.2, rotate: 90 }}
+                 whileTap={{ scale: 0.9 }}
+                 className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full"
+                 onClick={() => setLightboxOpen(false)}
+              >
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
