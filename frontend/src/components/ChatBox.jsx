@@ -35,6 +35,9 @@ const ChatBox = () => {
   const [socket, setSocket] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  // string to store url image to be dispalyed
+  const [lightboxImageUrl, setLightboxImageUrl] = useState('');
   const { user, selectedChat, setSelectedChat } = useChatState();
   const messagesEndRef = useRef(null);
 
